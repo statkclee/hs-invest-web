@@ -122,22 +122,44 @@ const SCENES = {
     listRow(A.sort((a, b) => b.억 - a.억), r => `<span>${r.corp_name} <span class="k">→ ${r.지역} · ${r.갈래}</span></span><span class="num">${fmt(r.억)}억</span>`, r => fly({ center: [(r.s_lon + r.d_lon) / 2, (r.s_lat + r.d_lat) / 2], zoom: r.갈래 === "해외" ? 2.5 : 7.5, pitch: r.갈래 === "해외" ? 0 : 40 }));
     if (globe) fly({ center: [170, 32], zoom: 1.55, pitch: 0, bearing: 0 }); else if (view === "sudo") fly(VIEWS.sudo); else fly(VIEWS.kr);
   },
-  return() {   // ④ 재환입 — 수도권 내 호(협상 영역) + 본사 관내·공장 관외 기둥(보라)
+  return(view = "all") {   // ④ 재환입 — 전체 · 회귀 대상(수도권 내 → 화성 선) · 공장 관외(기둥). 선택한 것만 올린다
     setProj(false);
-    const O = D.outflow.filter(r => r.갈래 === "수도권 내" && r.d_lon != null), maxE = Math.max(...O.map(r => r.억 || 0));
-    const agg = {}; O.forEach(r => { const k = r.corp_name + "|" + r.지역; agg[k] ??= { ...r, 억: 0, 건: 0 }; agg[k].억 += r.억 || 0; agg[k].건++; }); const A = Object.values(agg);
-    setArcs((A.map(r => line(bulge([r.d_lon, r.d_lat], [r.s_lon, r.s_lat], .18), { color: COL["수도권 내"], w: scale(r.억, maxE, 1.5, 7) }))));   // 방향을 뒤집는다 — 되돌리는 그림
-    const P = D.plant_out.filter(r => r.lon);
-    map.getSource("cols").setData(fc(P.map(r => col([r.lon, r.lat], 80, { color: COL.plant, h: 200 + (100 - (r.관내비율 || 0)) * 12, t: `${r.기업명} · 본사 관내 · 공장 관외<br>${r.업종}<br>관내 가입자 비율 ${r.관내비율}% · 종업원 ${r.KoDATA종업원}(구간)` }))));
+    const O = D.outflow.filter(r => r.갈래 === "수도권 내" && r.d_lon != null), maxE = Math.max(1, ...O.map(r => r.억 || 0));
+    const agg = {}; O.forEach(r => { const k = r.corp_name + "|" + r.지역; agg[k] ??= { ...r, 억: 0, 건: 0 }; agg[k].억 += r.억 || 0; agg[k].건++; }); const A = Object.values(agg), P = D.plant_out.filter(r => r.lon);
+    const showArc = view !== "plant", showPlant = view !== "arc";
+    setArcs(showArc ? A.map(r => line(bulge([r.d_lon, r.d_lat], [r.s_lon, r.s_lat], .18), { color: COL["수도권 내"], w: scale(r.억, maxE, 1.5, 7) })) : []);   // 방향을 뒤집는다 — 되돌리는 그림
+    map.getSource("cols").setData(fc(showPlant ? P.map(r => col([r.lon, r.lat], 80, { color: COL.plant, h: 200 + (100 - (r.관내비율 || 0)) * 12, t: `${r.기업명} · 본사 관내 · 공장 관외<br>${r.업종}<br>관내 가입자 비율 ${r.관내비율}% · 종업원 ${r.KoDATA종업원}(구간)` })) : []));
     const dest = {}; A.forEach(r => { dest[r.지역] ??= { c: [r.d_lon, r.d_lat], 억: 0, n: new Set() }; dest[r.지역].억 += r.억; dest[r.지역].n.add(r.corp_name); });
-    map.getSource("pts").setData(fc(Object.entries(dest).map(([k, v]) => pt(v.c, { color: COL["수도권 내"], r: 4 + Math.sqrt(v.억 / 40), label: v.억 >= 500 ? `${k} ${fmt(v.억)}억` : "", t: `${k}<br>${fmt(v.억)}억 · ${v.n.size}사 — 협상 영역` }))));
+    map.getSource("pts").setData(fc(showArc ? Object.entries(dest).map(([k, v]) => pt(v.c, { color: COL["수도권 내"], r: 4 + Math.sqrt(v.억 / 40), label: v.억 >= 500 ? `${k} ${fmt(v.억)}억` : "", t: `${k}<br>${fmt(v.억)}억 · ${v.n.size}사 — 협상 영역` })) : []));
     const os = K.outflow_sum.find(r => r.갈래 === "수도권 내");
-    answer([`<b>협상 영역 — 수도권 내 ${fmt(os.억)}억 · ${os.건}건 · ${os.기업}사</b>`, `되돌릴 후보 — 본사 관내 · 공장 관외 ${D.plant_out.length}사`, `지킬 고용 — 65세↑ 대표 ${fmt(K.succ.n65)}사 · ${fmt(K.succ.emp65)}명`], ["선 = 투자예정지 → 화성(되돌리는 방향) · 보라 기둥 = 본사 관내·공장 관외(높을수록 관내 가입자 비율 낮음)"]);
+    answer([`<b>회귀 대상</b> — 수도권 내 유출 ${fmt(os.억)}억 · ${os.건}건 · ${os.기업}사(협상 영역)`, `<b>공장 관외</b> — 본사 관내 · 공장 관외 ${D.plant_out.length}사(관내 가입자 비율 낮은 순)`, `<b>지킬 고용</b> — 65세↑ 대표 ${fmt(K.succ.n65)}사 · ${fmt(K.succ.emp65)}명`], ["선 = 투자예정지 → 화성(되돌리는 방향) · 보라 기둥 = 본사 관내·공장 관외(높을수록 관내 비율 낮음) · 「본사 관내·공장 관외」 = 국민연금 가입자 비율 추정"]);
     kpi([[fmt(os.억) + "억", "수도권 내 협상 영역"], [fmt(os.기업), "기업"], [fmt(D.plant_out.length), "공장 관외"], [fmt(K.succ.emp65), "65세↑ 대표 고용"]]);
-    legend(`${sw(COL["수도권 내"])}수도권 내 → 화성 ${sw(COL.plant)}본사 관내 · 공장 관외`); ctl(`<button data-v="sudo" class="on">수도권</button><button data-v="hs">화성</button>`);
-    listRow([...A.sort((a, b) => b.억 - a.억).map(r => ({ ...r, kind: "out" })), ...D.plant_out.map(r => ({ ...r, kind: "plant" }))], r => r.kind === "out" ? `<span>${r.corp_name} <span class="k">${r.지역}</span></span><span class="num">${fmt(r.억)}억</span>` : `<span>${r.기업명} <span class="k">공장 관외 · ${r.업종}</span></span><span class="num">관내 ${r.관내비율}%</span>`,
+    legend(`${sw(COL["수도권 내"])}수도권 내 → 화성 ${sw(COL.plant)}본사 관내 · 공장 관외`);
+    ctl(["all", "arc", "plant"].map(v => `<button data-v="${v}" class="${v === view ? "on" : ""}">${{ all: "전체", arc: "회귀 대상(수도권 유출)", plant: "공장 관외" }[v]}</button>`).join(""));
+    const rows = [...(showArc ? A.sort((a, b) => b.억 - a.억).map(r => ({ ...r, kind: "out" })) : []), ...(showPlant ? D.plant_out.map(r => ({ ...r, kind: "plant" })) : [])];
+    listRow(rows, r => r.kind === "out" ? `<span>${r.corp_name} <span class="k">${r.지역}</span></span><span class="num">${fmt(r.억)}억</span>` : `<span>${r.기업명} <span class="k">공장 관외 · ${r.업종}</span></span><span class="num">관내 ${r.관내비율}%</span>`,
       r => r.kind === "out" ? fly({ center: [(r.s_lon + r.d_lon) / 2, (r.s_lat + r.d_lat) / 2], zoom: 9, pitch: 45 }) : (r.lon && fly({ center: [r.lon, r.lat], zoom: 13.5, pitch: 60 })));
-    fly({ center: [127.05, 37.3], zoom: 8.6, pitch: 50, bearing: -10 });
+    fly(view === "plant" ? VIEWS.hs : { center: [127.05, 37.3], zoom: 8.6, pitch: 50, bearing: -10 });
+  },
+  capacity(view = "all") {   // ⑤ 투자 여력 발굴 — 관내 업체 중 다음 투자가 가까운 곳. 공개 가능한 신호 넷(구간값)만 쓴다
+    setProj(false);
+    const capa = Object.fromEntries(D.capacity.map(r => [r.기업명, r]));
+    const rows = D.sites.map(s => { const c = capa[s.n];
+      const sig = { 투자가속: !!c && c.후반배 >= 1.5, 성장: s.grow === "둘 다 는다" || s.grow === "투자만 는다", 요건근접: (s.cap >= 100 && s.cap < 200) || (s.emp === 75 && s.cap >= 200), 고용증가: (s.chg || 0) >= 100 };   // 증감은 ±50 반올림 구간값 — +50 은 잡음이라 +100 부터
+      const score = (sig.투자가속 ? 2 : 0) + (sig.성장 ? 1 : 0) + (sig.요건근접 ? 1 : 0) + (sig.고용증가 ? 1 : 0);
+      return { ...s, c, sig, score, 신호: Object.entries(sig).filter(([k, v]) => v).map(([k]) => k).join(" · ") }; }).filter(r => r.score >= 2);   // 1점(신호 하나)은 잡음 — 둘 이상 겹친 곳만
+    const SEL = { all: r => true, fast: r => r.sig.투자가속, grow: r => r.sig.성장, near: r => r.sig.요건근접, hire: r => r.sig.고용증가 }[view] || (() => true);
+    const R = rows.filter(SEL).sort((a, b) => b.score - a.score || (b.cap || 0) - (a.cap || 0)), maxC = Math.max(1, ...R.map(r => r.cap || 0));
+    const colOf = r => r.score >= 3 ? COL.elig : COL.near;
+    setArcs([]); map.getSource("pts").setData(EMPTY);
+    map.getSource("cols").setData(fc(R.map(r => col([r.lon, r.lat], 70, { color: colOf(r), h: 80 + 250 * r.score + scale(r.cap, maxC, 0, 900), t: `${r.n} · 여력 ${r.score}점<br>${r.ind} · ${r.dong || ""}<br>${r.신호}<br>설비투자 누적 ${r.cap ? fmt(r.cap) + "억" : "–"} · 종업원 ${r.emp ?? "–"}(구간) · 5년 ${r.chg == null ? "–" : (r.chg > 0 ? "+" : "") + r.chg}${r.c ? " · 후반 " + r.c.후반배 + "배" : ""}` }))));
+    answer([`<b>투자 여력 ${rows.length}사</b>(신호 2개↑ 겹침) — 3점↑ ${rows.filter(r => r.score >= 3).length} · 2점 ${rows.filter(r => r.score === 2).length}`, `신호 — 후반기 설비투자 1.5배↑(×2) · 성장 유형(둘 다·투자만) · 요건 근접(투자 100~200억 또는 고용 50~99) · 5년 고용 +100↑`, "내부판(Shiny 감지 탭) = 국민연금 월별 가입자·채용·R&D 까지 8신호 · 여기는 공개 가능한 넷"],
+      ["적 = 3점↑ · 황 = 2점 · 높이 = 점수 + 설비투자 · 종업원·증감 = 구간 대표값"]);
+    kpi([[fmt(rows.filter(r => r.score >= 3).length), "3점↑ 지금 만난다"], [fmt(rows.filter(r => r.score === 2).length), "2점 분기 안"], [fmt(D.capacity.length), "후반기 투자 증가"], [fmt(rows.filter(r => r.sig.요건근접).length), "요건 근접"]]);
+    legend(`${sw(COL.elig)}3점↑ ${sw(COL.near)}2점`);
+    ctl(["all", "fast", "grow", "near", "hire"].map(v => `<button data-v="${v}" class="${v === view ? "on" : ""}">${{ all: "전체", fast: "투자 가속", grow: "성장 유형", near: "요건 근접", hire: "고용 증가" }[v]}</button>`).join(""));
+    listRow(R, r => `<span>${r.n} <span class="k">${r.ind} · ${r.신호}</span></span><span class="num">${r.score}점${r.cap ? " · " + fmt(r.cap) + "억" : ""}</span>`, r => fly({ center: [r.lon, r.lat], zoom: 13.5, pitch: 60 }));
+    fly(VIEWS.hs);
   }
 };
 const VIEWS = { kr: { center: [127.5, 36.4], zoom: 6.6, pitch: 45, bearing: -8 }, sudo: { center: [127.05, 37.35], zoom: 8.8, pitch: 50, bearing: -10 }, hs: { center: [126.95, 37.17], zoom: 10.3, pitch: 55, bearing: -12 }, dongtan: { center: [127.1, 37.2], zoom: 13, pitch: 60, bearing: -20 }, hyangnam: { center: [126.92, 37.13], zoom: 13, pitch: 60, bearing: -15 }, world: null };
@@ -146,6 +168,8 @@ function show(id) { if (!SCENES[id]) id = "inflow"; cur = id; document.querySele
 document.querySelectorAll("#scenes button").forEach(b => b.onclick = () => show(b.dataset.s));
 $("ctl").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; const v = b.dataset.v;
   if (cur === "outflow") return SCENES.outflow(v);
+  if (cur === "return") return SCENES.return(v);
+  if (cur === "capacity") return SCENES.capacity(v);
   $("ctl").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); if (VIEWS[v]) fly(VIEWS[v]); });
 addEventListener("hashchange", () => { const id = location.hash.slice(1); if (id && id !== cur) show(id); });
 
