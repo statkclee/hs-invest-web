@@ -4,7 +4,7 @@ const $ = id => document.getElementById(id), fmt = (v, d = 0) => v == null || Nu
 const status = t => { $("status").textContent = t; };
 const D = await fetch("data/invest.json").then(r => r.json()); const HS = [D.hs[0], D.hs[1]], K = D.kpi;
 const [EMD, CITY] = await Promise.all(["data/emd.geojson", "data/hwaseong_boundary.geojson"].map(u => fetch(u).then(r => r.ok ? r.json() : null).catch(() => null)));   // 행정동 29 · 시 경계
-const COL = { "화성 관내": "#1baf7a", "수도권 내": "#2a78d6", "지방": "#B7791F", "해외": "#9B2C2C", in: "#2a78d6", elig: "#a63d2f", near: "#B7791F", plant: "#7c3aed" };
+const COL = { "화성 관내": "#047857", "수도권 내": "#1E40AF", "지방": "#B45309", "해외": "#9F1239", in: "#1E40AF", elig: "#9F1239", near: "#B45309", plant: "#6D28D9" };
 
 // ── 기하 — 호(대권 · 국내는 살짝 부풀림) · 육각 기둥 ───────────────────────────
 const toRad = d => d * Math.PI / 180, toDeg = r => r * 180 / Math.PI;
@@ -40,20 +40,20 @@ map.on("load", () => {
   map.addSource("arcs", { type: "geojson", data: EMPTY }); map.addSource("cols", { type: "geojson", data: EMPTY }); map.addSource("pts", { type: "geojson", data: EMPTY }); map.addSource("hs", { type: "geojson", data: fc([pt(HS, { n: "화성특례시" })]) });
   // 경계 — 시 경계(굵은 먹선) · 행정동 29(가는 선 + 이름, 줌 9.5 부터)
   if (EMD) { map.addSource("emd", { type: "geojson", data: EMD });
-    map.addLayer({ id: "emd-fill", type: "fill", source: "emd", minzoom: 8, paint: { "fill-color": "#a63d2f", "fill-opacity": .04 } });
+    map.addLayer({ id: "emd-fill", type: "fill", source: "emd", minzoom: 8, paint: { "fill-color": "#1E3A8A", "fill-opacity": .04 } });
     map.addLayer({ id: "emd-line", type: "line", source: "emd", minzoom: 8, paint: { "line-color": "#6B7280", "line-width": ["interpolate", ["linear"], ["zoom"], 8, .4, 12, 1.2], "line-opacity": .8, "line-dasharray": [2, 1.5] } });
-    map.addLayer({ id: "emd-label", type: "symbol", source: "emd", minzoom: 9.5, layout: { "text-field": ["get", "dong"], "text-size": 11, "text-font": ["Noto Sans Regular"], "text-allow-overlap": false }, paint: { "text-color": "#4A5568", "text-halo-color": "#fffff8", "text-halo-width": 1.2 } }); }
+    map.addLayer({ id: "emd-label", type: "symbol", source: "emd", minzoom: 9.5, layout: { "text-field": ["get", "dong"], "text-size": 11, "text-font": ["Noto Sans Regular"], "text-allow-overlap": false }, paint: { "text-color": "#374151", "text-halo-color": "#ffffff", "text-halo-width": 1.2 } }); }
   if (CITY) { map.addSource("city", { type: "geojson", data: CITY });
-    map.addLayer({ id: "city-glow", type: "line", source: "city", paint: { "line-color": "#a63d2f", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 3, 12, 10], "line-opacity": .15, "line-blur": 3 } });
-    map.addLayer({ id: "city-line", type: "line", source: "city", paint: { "line-color": "#262624", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 1, 12, 2.5], "line-opacity": .9 } }); }
+    map.addLayer({ id: "city-glow", type: "line", source: "city", paint: { "line-color": "#9F1239", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 3, 12, 10], "line-opacity": .15, "line-blur": 3 } });
+    map.addLayer({ id: "city-line", type: "line", source: "city", paint: { "line-color": "#111827", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 1, 12, 2.5], "line-opacity": .9 } }); }
   map.addLayer({ id: "arcs-glow", type: "line", source: "arcs", paint: { "line-color": ["get", "color"], "line-width": ["*", 2.6, ["get", "w"]], "line-opacity": .18, "line-blur": 4 }, layout: { "line-cap": "round" } });
   map.addLayer({ id: "arcs", type: "line", source: "arcs", paint: { "line-color": ["get", "color"], "line-width": ["get", "w"], "line-opacity": .85 }, layout: { "line-cap": "round" } });
   map.addLayer({ id: "cols", type: "fill-extrusion", source: "cols", paint: { "fill-extrusion-color": ["get", "color"], "fill-extrusion-height": ["get", "h"], "fill-extrusion-base": 0, "fill-extrusion-opacity": .9, "fill-extrusion-vertical-gradient": true } });
   map.addLayer({ id: "pts-halo", type: "circle", source: "pts", paint: { "circle-radius": ["*", 1.9, ["get", "r"]], "circle-color": ["get", "color"], "circle-opacity": .18 } });
   map.addLayer({ id: "pts", type: "circle", source: "pts", paint: { "circle-radius": ["get", "r"], "circle-color": ["get", "color"], "circle-stroke-color": "#fff", "circle-stroke-width": 1, "circle-opacity": .9 } });
-  map.addLayer({ id: "pts-label", type: "symbol", source: "pts", filter: ["has", "label"], layout: { "text-field": ["get", "label"], "text-size": 11, "text-offset": [0, 1.2], "text-anchor": "top", "text-font": ["Noto Sans Regular"], "text-allow-overlap": false }, paint: { "text-color": "#262624", "text-halo-color": "#fffff8", "text-halo-width": 1.2 } });
+  map.addLayer({ id: "pts-label", type: "symbol", source: "pts", filter: ["has", "label"], layout: { "text-field": ["get", "label"], "text-size": 11, "text-offset": [0, 1.2], "text-anchor": "top", "text-font": ["Noto Sans Regular"], "text-allow-overlap": false }, paint: { "text-color": "#111827", "text-halo-color": "#ffffff", "text-halo-width": 1.2 } });
   map.addLayer({ id: "heads", type: "symbol", source: "heads", layout: { "icon-image": ["get", "icon"], "icon-size": ["get", "sz"], "icon-rotate": ["get", "bearing"], "icon-rotation-alignment": "map", "icon-allow-overlap": true, "icon-ignore-placement": true }, paint: { "icon-opacity": .95 } });
-  map.addLayer({ id: "hs", type: "symbol", source: "hs", layout: { "text-field": "★ 화성", "text-size": 14, "text-font": ["Noto Sans Bold"], "text-allow-overlap": true }, paint: { "text-color": "#262624", "text-halo-color": "#fffff8", "text-halo-width": 2 } });
+  map.addLayer({ id: "hs", type: "symbol", source: "hs", layout: { "text-field": "★ 화성", "text-size": 14, "text-font": ["Noto Sans Bold"], "text-allow-overlap": true }, paint: { "text-color": "#111827", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
   show(location.hash.slice(1) || "inflow");
 });
 // 선 + 화살촉 — 선의 마지막 두 점으로 방위각을 잰다(북 = 0 · 시계 방향)
@@ -95,9 +95,9 @@ const SCENES = {
     const E = D.elig.filter(r => r.lon), Cp = D.capacity.filter(r => r.lon && !E.some(e => e.기업명 === r.기업명)), I = D.invest_in.filter(r => r.lon), maxC = Math.max(...E.map(r => r.설비투자_억 || 0));
     setArcs([]);
     map.getSource("cols").setData(fc([...E.map(r => col([r.lon, r.lat], 90, { color: COL.elig, h: 100 + scale(r.설비투자_억, maxC, 0, 2500), t: `${r.기업명} · 요건 충족(${r.군})<br>${r.산업} · 설비투자 ${fmt(r.설비투자_억)}억 · 종업원 ${r.종업원}(구간)` })),
-      ...Cp.map(r => col([r.lon, r.lat], 70, { color: COL.near, h: 60 + scale(r.설비투자_억, maxC, 0, 1500), t: `${r.기업명} · 후반기 투자 ${r.후반배}배<br>${r.산업} · 누적 ${fmt(r.설비투자_억)}억 · 5년 고용 ${r.고용증감5y > 0 ? "+" : ""}${r.고용증감5y}` }))]));
+      ...Cp.map(r => col([r.lon, r.lat], 70, { color: COL.near, h: 60 + scale(r.설비투자_억, maxC, 0, 1500), t: `${r.기업명} · 최근 2년 투자 = 이전 연평균의 ${r.후반배}배<br>${r.산업} · 누적 ${fmt(r.설비투자_억)}억 · 5년 고용 ${r.고용증감5y > 0 ? "+" : ""}${r.고용증감5y}` }))]));
     map.getSource("pts").setData(fc(I.map(r => pt([r.lon, r.lat], { color: COL["화성 관내"], r: 6 + Math.sqrt(r.억) / 3, label: `${r.기업명} ${fmt(r.억)}억`, t: `${r.기업명} · 관내 투자 공시<br>${r.유형} ${fmt(r.억)}억 · ${r.공시일}` }))));
-    answer([`<b>요건 충족 ${fmt(K.n_elig)}사</b>(투자 200억 且 고용 100명) · 설비투자 누적 ${fmt(K.capex_sum)}억 · 근접 ${fmt(K.n_near)}사`, `관내 투자 공시 ${D.invest_in.length}건 ${fmt(D.invest_in.reduce((s, r) => s + r.억, 0))}억`, `집행 ${K.exec}억 — 요건 충족 기업 대상`], ["적 기둥 = 요건 충족(높이 = 설비투자) · 황 기둥 = 후반기 투자 증가(여력) · 녹 점 = 관내 투자 공시"]);
+    answer([`<b>요건 충족 ${fmt(K.n_elig)}사</b>(투자 200억 且 고용 100명) · 설비투자 누적 ${fmt(K.capex_sum)}억 · 근접 ${fmt(K.n_near)}사`, `관내 투자 공시 ${D.invest_in.length}건 ${fmt(D.invest_in.reduce((s, r) => s + r.억, 0))}억`, `집행 ${K.exec}억 — 요건 충족 기업 대상`], ["적 기둥 = 요건 충족(높이 = 설비투자) · 황 기둥 = 최근 2년 투자 가속(여력) · 녹 점 = 관내 투자 공시"]);
     kpi([[fmt(K.n_elig), "요건 충족"], [fmt(K.capex_sum) + "억", "설비투자 누적"], [fmt(K.n_near), "근접"], [K.exec + "억", "집행"]]);
     legend(`${sw(COL.elig)}요건 충족 ${sw(COL.near)}투자 여력 ${sw(COL["화성 관내"])}관내 공시`); ctl(`<button data-v="hs" class="on">화성 전경</button><button data-v="dongtan">동탄</button><button data-v="hyangnam">향남</button>`);
     listRow(D.elig.sort((a, b) => b.설비투자_억 - a.설비투자_억), r => `<span>${r.기업명} <span class="k">${r.산업} · ${r.군}</span></span><span class="num">${fmt(r.설비투자_억)}억</span>`, r => { if (r.lon) fly({ center: [r.lon, r.lat], zoom: 13.5, pitch: 60 }); });
@@ -145,17 +145,17 @@ const SCENES = {
     setProj(false);
     const capa = Object.fromEntries(D.capacity.map(r => [r.기업명, r]));
     const rows = D.sites.map(s => { const c = capa[s.n];
-      const sig = { 투자가속: !!c && c.후반배 >= 1.5, 성장: s.grow === "둘 다 는다" || s.grow === "투자만 는다", 요건근접: (s.cap >= 100 && s.cap < 200) || (s.emp === 75 && s.cap >= 200), 고용증가: (s.chg || 0) >= 100 };   // 증감은 ±50 반올림 구간값 — +50 은 잡음이라 +100 부터
+      const sig = { 투자가속: !!c && c.후반배 >= 1.5, 성장: s.grow === "둘 다 는다" || s.grow === "투자만 는다", 요건근접: (s.cap >= 100 && s.cap < 200) || (s.emp === 75 && s.cap >= 200), 고용증가: (s.chg || 0) >= 100 };   // 증감은 ±50 반올림 구간값 — +50 은 오차 범위라 +100 부터
       const score = (sig.투자가속 ? 2 : 0) + (sig.성장 ? 1 : 0) + (sig.요건근접 ? 1 : 0) + (sig.고용증가 ? 1 : 0);
-      return { ...s, c, sig, score, 신호: Object.entries(sig).filter(([k, v]) => v).map(([k]) => k).join(" · ") }; }).filter(r => r.score >= 2);   // 1점(신호 하나)은 잡음 — 둘 이상 겹친 곳만
+      return { ...s, c, sig, score, 신호: Object.entries(sig).filter(([k, v]) => v).map(([k]) => k).join(" · ") }; }).filter(r => r.score >= 2);   // 1점(신호 하나)은 근거 부족 — 둘 이상 겹친 곳만
     const SEL = { all: r => true, fast: r => r.sig.투자가속, grow: r => r.sig.성장, near: r => r.sig.요건근접, hire: r => r.sig.고용증가 }[view] || (() => true);
     const R = rows.filter(SEL).sort((a, b) => b.score - a.score || (b.cap || 0) - (a.cap || 0)), maxC = Math.max(1, ...R.map(r => r.cap || 0));
     const colOf = r => r.score >= 3 ? COL.elig : COL.near;
     setArcs([]); map.getSource("pts").setData(EMPTY);
-    map.getSource("cols").setData(fc(R.map(r => col([r.lon, r.lat], 70, { color: colOf(r), h: 80 + 250 * r.score + scale(r.cap, maxC, 0, 900), t: `${r.n} · 여력 ${r.score}점<br>${r.ind} · ${r.dong || ""}<br>${r.신호}<br>설비투자 누적 ${r.cap ? fmt(r.cap) + "억" : "–"} · 종업원 ${r.emp ?? "–"}(구간) · 5년 ${r.chg == null ? "–" : (r.chg > 0 ? "+" : "") + r.chg}${r.c ? " · 후반 " + r.c.후반배 + "배" : ""}` }))));
-    answer([`<b>투자 여력 ${rows.length}사</b>(신호 2개↑ 겹침) — 3점↑ ${rows.filter(r => r.score >= 3).length} · 2점 ${rows.filter(r => r.score === 2).length}`, `신호 — 후반기 설비투자 1.5배↑(×2) · 성장 유형(둘 다·투자만) · 요건 근접(투자 100~200억 또는 고용 50~99) · 5년 고용 +100↑`, "내부판(Shiny 감지 탭) = 국민연금 월별 가입자·채용·R&D 까지 8신호 · 여기는 공개 가능한 넷"],
+    map.getSource("cols").setData(fc(R.map(r => col([r.lon, r.lat], 70, { color: colOf(r), h: 80 + 250 * r.score + scale(r.cap, maxC, 0, 900), t: `${r.n} · 여력 ${r.score}점<br>${r.ind} · ${r.dong || ""}<br>${r.신호}<br>설비투자 누적 ${r.cap ? fmt(r.cap) + "억" : "–"} · 종업원 ${r.emp ?? "–"}(구간) · 5년 ${r.chg == null ? "–" : (r.chg > 0 ? "+" : "") + r.chg}${r.c ? " · 최근 2년 투자 = 이전 연평균의 " + r.c.후반배 + "배" : ""}` }))));
+    answer([`<b>투자 여력 ${rows.length}사</b>(신호 2개↑ 겹침) — 3점↑ ${rows.filter(r => r.score >= 3).length} · 2점 ${rows.filter(r => r.score === 2).length}`, `신호 — 최근 2년 설비투자가 이전 연평균의 1.5배↑(×2) · 성장 유형(투자·고용 동반 또는 투자 증가) · 요건 근접(투자 100~200억 또는 고용 50~99) · 5년 고용 +100↑`, "내부판(Shiny 감지 탭) = 국민연금 월별 가입자·채용·R&D 까지 8신호 · 여기는 공개 가능한 넷"],
       ["적 = 3점↑ · 황 = 2점 · 높이 = 점수 + 설비투자 · 종업원·증감 = 구간 대표값"]);
-    kpi([[fmt(rows.filter(r => r.score >= 3).length), "3점↑ 지금 만난다"], [fmt(rows.filter(r => r.score === 2).length), "2점 분기 안"], [fmt(D.capacity.length), "후반기 투자 증가"], [fmt(rows.filter(r => r.sig.요건근접).length), "요건 근접"]]);
+    kpi([[fmt(rows.filter(r => r.score >= 3).length), "3점↑ 즉시 접촉"], [fmt(rows.filter(r => r.score === 2).length), "2점 분기 내 접촉"], [fmt(D.capacity.length), "최근 2년 투자 가속"], [fmt(rows.filter(r => r.sig.요건근접).length), "요건 근접"]]);
     legend(`${sw(COL.elig)}3점↑ ${sw(COL.near)}2점`);
     ctl(["all", "fast", "grow", "near", "hire"].map(v => `<button data-v="${v}" class="${v === view ? "on" : ""}">${{ all: "전체", fast: "투자 가속", grow: "성장 유형", near: "요건 근접", hire: "고용 증가" }[v]}</button>`).join(""));
     listRow(R, r => `<span>${r.n} <span class="k">${r.ind} · ${r.신호}</span></span><span class="num">${r.score}점${r.cap ? " · " + fmt(r.cap) + "억" : ""}</span>`, r => fly({ center: [r.lon, r.lat], zoom: 13.5, pitch: 60 }));
