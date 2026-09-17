@@ -152,8 +152,7 @@ const Q = [
   <div id="sim"></div>
   <div class="grid"><div class="card"><h3>성장 유형 — 투자·고용 동반 증가 기업</h3>${bar("p3a", Object.keys(grow), Object.values(grow), ["#047857", "#1E40AF", "#B45309", "#9CA3AF"])}</div>
   <div class="card"><h3>관내 투자 공시 ${inv.length}건</h3>${table(inv, [{ k: "기업명" }, { k: "유형" }, { k: "억" }, { k: "공시일" }, { k: "산업" }], { search: false, height: "300px" })}</div></div>
-  <h2>최근 2년 설비투자가 빨라진 기업 ${E.action.capacity.length}사 — 다음 투자 여력</h2>${table(E.action.capacity, [{ k: "기업명" }, { k: "산업" }, { k: "종업원", nm: "종업원(구간)" }, { k: "고용증감5y", nm: "5년 고용(±50)" }, { k: "설비투자_억", nm: "누적(억)" }, { k: "연평균_억", nm: "연평균(억)" }, { k: "후반배", nm: "최근 2년 투자 속도(이전 연평균 대비 배)", d: 1 }], { height: "340px" })}
-  <h2>AI 전환 트랙(안) — 법인 1만 곳 대상</h2>${table(C.AI_TRACK, autoCols(C.AI_TRACK), { search: false })}`; },
+  <h2>최근 2년 설비투자가 빨라진 기업 ${E.action.capacity.length}사 — 다음 투자 여력</h2>${table(E.action.capacity, [{ k: "기업명" }, { k: "산업" }, { k: "종업원", nm: "종업원(구간)" }, { k: "고용증감5y", nm: "5년 고용(±50)" }, { k: "설비투자_억", nm: "누적(억)" }, { k: "연평균_억", nm: "연평균(억)" }, { k: "후반배", nm: "최근 2년 투자 속도(이전 연평균 대비 배)", d: 1 }], { height: "340px" })}`; },
   after() {
     const run = () => { const iv = +$("#iv").value, em = +$("#em").value, cap = $("#cap").classList.contains("on"), s = simulate(iv, em, cap);
       $("#iv-v").textContent = iv; $("#em-v").textContent = em;
