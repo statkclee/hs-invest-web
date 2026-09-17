@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>화성특례시 기업투자 4유형 — 3D</title>
+<link href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="map"></div>
+<div id="side" class="panel">
+  <h1>기업투자 4유형 <span class="k">화성특례시 · 3D</span></h1>
+  <nav id="scenes">
+    <button data-s="inflow"><b>① 관내 유입</b><span>밖에서 들어오는 투자</span></button>
+    <button data-s="reinvest"><b>② 관내 재투자</b><span>관내 기업의 다음 투자</span></button>
+    <button data-s="outflow"><b>③ 관외 유출</b><span>나가는 돈</span></button>
+    <button data-s="return"><b>④ 재환입</b><span>되돌릴 투자</span></button>
+  </nav>
+  <div id="answer"></div>
+  <div id="kpi" class="kpi"></div>
+  <div id="ctl"></div>
+  <div id="legend" class="k"></div>
+  <div id="list"></div>
+  <div class="k foot">배포판 · 종업원 = 구간 대표값 · 기업 = DART 매핑 법인 · 투자예정지 = 공시 · 배경 OpenFreeMap</div>
+</div>
+<div id="tip"></div>
+<div id="status">불러오는 중…</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
