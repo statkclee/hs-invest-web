@@ -3,7 +3,7 @@
 const $ = s => document.querySelector(s), fmt = (v, d = 0) => v == null || Number.isNaN(+v) ? "–" : (+v).toLocaleString("ko-KR", { maximumFractionDigits: d, minimumFractionDigits: d });
 const pct = (a, b) => b ? Math.round(100 * a / b) : 0, esc = s => String(s ?? "").replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 const D = {};
-for (const n of ["firms", "outflow", "trade", "kosis", "power", "succ", "meta", "eco", "content", "cluster", "flows"]) D[n] = await fetch(`data/${n}.json`).then(r => r.ok ? r.json() : null).catch(() => null);
+for (const n of ["firms", "outflow", "trade", "kosis", "power", "succ", "meta", "eco", "content", "cluster", "flows", "tax"]) D[n] = await fetch(`data/${n}.json`).then(r => r.ok ? r.json() : null).catch(() => null);
 const EMD_GJ = await fetch("data/emd_stats.geojson").then(r => r.ok ? r.json() : null).catch(() => null), PTS_GJ = null;   // 행정동 경계(code/28 이 data/ 에 둔다)
 const C = D.content, E = D.eco, M = D.meta, P = C.POLICY;
 $("#built").textContent = `스냅숏 ${M.built_at} · KoDATA ${fmt(M.kodata_all)}사 · DART 매핑 ${fmt(M.map_n)}사 · ${String(M.fx_note).replace(/\s*\(.*\)\s*$/, "")}`;
@@ -182,19 +182,29 @@ const Q = [
   <div class="card"><h3>본사 관내 · 공장 관외 ${po.length}사 — 관내 가입자 비율 낮은 곳</h3>${table(po, [{ k: "기업명" }, { k: "업종" }, { k: "KoDATA종업원", nm: "종업원(구간)" }, { k: "화성가입자" }, { k: "관내비율", nm: "관내 비율%" }, { k: "설비투자_억", nm: "설비투자(억)" }], { search: false, height: "360px" })}</div></div>
   <h2>승계 — 대표 연령대별 고용</h2><div class="grid"><div class="card">${bar("p5a", D.succ.age.map(r => r.대), D.succ.age.map(r => r.고용), D.succ.age.map(r => /^[678]/.test(r.대) ? "#9F1239" : "#9CA3AF"))}<div class="k">고용(명) · 대표 나이 확인 ${fmt(D.succ.n_age)}사 · 65세↑ 제조 ${fmt(D.succ.n65_mfg)}사 ${fmt(D.succ.emp65_mfg)}명</div></div><div class="card">${table(C.SUCC_ACTION, autoCols(C.SUCC_ACTION), { search: false })}</div></div>`; } },
 
-{ id: "jobs", n: "⑥", t: "세수·고용 효과", q: "고용 · 연봉 · 세금과공과", render() {
-  const sim = E.sim, tier = E.tier.sort((a, b) => b.n_인당고지_만 - a.n_인당고지_만), big = E.big, bt = E.big_t, tot = E.elig_tot[0], taxY = sim.tax3y / 3;
-  const jobs = sum(E.action.elig, r => r.종업원), inds = E.ind.filter(r => r.d_세공_억 > 0).sort((a, b) => b.d_세공_억 - a.d_세공_억);
-  const medSal = salary(E.med_wage), t1 = tier.filter(r => r.차등.startsWith("1군")), wAvg = a => sum(a, r => r.n_인당고지_만 * r.n_가입자) / Math.max(1, sum(a, r => r.n_가입자)), sal1 = salary(wAvg(t1)), salAll = salary(wAvg(tier));
-  const payroll = Math.round(jobs * salAll / 1e4);
-  return chain(7) + answer([`<b>요건 충족 ${sim.n_elig}사</b> — 고용 ${fmt(jobs)}명 × 평균 연봉 ${won(salAll)}원 = <b>연 임금 ${fmt(payroll)}억</b>`, `<b>세금과공과</b> — 3년 ${fmt(sim.tax3y)}억 · 연 ${fmt(taxY)}억 · ${sim.tax_n}사`, `<b>차등 지원 ${fmt(tot.차등_억)}억</b> = 세금과공과 ${fmt(tot.차등_억 / taxY, 0)}년치 · 임금 ${(tot.차등_억 / payroll).toFixed(1)}년치 → 지원의 성과 = 세수 아닌 연봉 ${won(sal1)}원(1군) 일자리`],
-    [`연봉 = 국민연금 인당 월 고지액 ÷ 보험료율 ${NPS_RATE * 100}%(2026 · 사업장+근로자) × 12 · 기준소득월액 상한(약 650만원) → 고임금 사업장 과소`, "세금과공과 = 회계 항목(대리) · 고용 = 구간 대표값 합"]) +
-  kpi([[won(medSal) + "원", `추정 연봉 중위 · 제조 산업군`], [won(sal1) + "원", "1군(국가첨단전략) 가입자 가중 평균"], [won(salary(sum(big, r => r.인당고지_만 * r.가입자수) / Math.max(1, sum(big, r => r.가입자수)))) + "원", `300명↑ 사업장 ${big.length}곳 가중 평균`], [fmt(sum(big, r => r.가입자수)) + "명", `300명↑ 사업장 가입자 · ${E.M1}`], [fmt(sim.big_capex) + "억", `300명↑ 중 설비투자 확인 ${sim.big_capex_n}사 누적`]]) +
-  `<div class="grid"><div class="card"><h3>산업군별 추정 평균 연봉(만원)</h3>${hbar("p7a", tier.map(r => r.산업), tier.map(r => salary(r.n_인당고지_만)), tier.map(r => r.차등.startsWith("1군") ? "#1E40AF" : r.차등.startsWith("2군") ? "#B45309" : "#9CA3AF"))}<div class="k">파랑 1군 · 금 2군 · 회 3군 · 중위 ${won(medSal)}원 · 월 고지액 ÷ ${NPS_RATE * 100}% × 12</div></div>
-  <div class="card"><h3>산업군별 연봉 · 세금과공과(요건 충족 기업 · 3년)</h3>${table(inds.map(r => ({ ...r, 연봉: salary(r.n_인당고지_만) })), [{ k: "산업" }, { k: "갈래", nm: "구분" }, { k: "연봉", nm: "추정 연봉(만)" }, { k: "d_요건", nm: "요건 충족" }, { k: "d_capex억", nm: "설비투자(억)" }, { k: "d_세공_억", nm: "세공 3년(억)", d: 1 }, { k: "d_세공_인당_만", nm: "인당 세공(만)", d: 1 }], { search: false, height: "360px" })}</div></div>
-  <h2>300명 이상 사업장 ${big.length}곳 — 고용 핵심(국민연금 공개자료 · 법인·기관)</h2>
-  <div class="grid"><div class="card">${bar("p7b", bt.map(r => r.군), bt.map(r => r.가입자), bt.map(r => r.군 === "1군" ? "#1E40AF" : r.군 === "2군" ? "#B45309" : "#9CA3AF"))}<div class="k">군별 가입자(명) · 사업장 ${bt.map(r => `${r.군} ${r.사업장}`).join(" · ")}</div></div>
-  <div class="card">${table(big.map(r => ({ ...r, 연봉: salary(r.인당고지_만), 임금총액: Math.round(r.가입자수 * salary(r.인당고지_만) / 1e4) })), [{ k: "사업장명" }, { k: "산업군" }, { k: "구" }, { k: "가입자수" }, { k: "연봉", nm: "추정 연봉(만)" }, { k: "임금총액", nm: "연 임금(억)" }, { k: "본사" }], { height: "360px" })}</div></div>`; } },
+{ id: "jobs", n: "⑥", t: "세수·고용 효과", q: "고용 · 연봉 · 세수(추정) · 지원 1건이 만드는 것", render() {
+  // 2026-09-19 다시 씀 — 검토(tech_document/2026-09-19_세수고용효과-페이지-검토.md): 세금과공과는 세수가 아니고, 회수는 총량이 아니라 증분으로 잰다. 수치는 data/tax.json(code/37) + eco.json
+  const T = D.tax, X = T.elig, W = T.wage, tier = E.tier.sort((a, b) => b.n_인당고지_만 - a.n_인당고지_만), big = E.big, bt = E.big_t;
+  const t1 = tier.filter(r => r.차등.startsWith("1군")), wAvg = a => sum(a, r => r.n_인당고지_만 * r.n_가입자) / Math.max(1, sum(a, r => r.n_가입자)), sal1 = salary(wAvg(t1)), salAll = salary(wAvg(tier));
+  const payroll = Math.round(X.emp_exact * W.mean_mfg / 1e4), capV = W.cap_month * NPS_RATE / 1e4, capped = v => v >= capV * 0.97;
+  const u1 = T.units[0], u2 = T.units[1];
+  return chain(7) + answer([`<b>요건 충족 ${X.n}사</b> — 고용 ${fmt(X.emp_exact)}명 · 국민연금으로 이은 ${X.nps_n}사의 자체 가중평균 연봉 ${won(X.own_wage)}원(제조 전체 평균 ${won(W.mean_mfg)}원) → <b>연 임금 약 ${fmt(X.own_payroll)}억</b>(고지 기반 · 상한 ${X.own_cap_n}사는 하한)`,
+      `<b>이들이 화성시에 내는 세금(추정) 연 ${fmt(X.hs_total_yr)}억</b> = 법인지방소득세 화성분 ${fmt(X.hs_yr)}억 + 주민세 종업원분 ${fmt(X.res_yr)}억 · 법인세+법인지방소득세(국세 포함) 연평균 ${fmt(X.tax_yr)}억 × 3 = ${fmt(X.tax3_annualized)}억(${X.n_tax}사 · 2023~25 결산이 3년 다 있는 곳은 ${X.yrs_dist["3"] || 0}사) · 재산세·취득세는 없다`,
+      `<b>지원의 효과는 총량이 아니라 한 건의 증분으로 잰다</b> — 요건 충족 중위 한 건: 지원 ${fmt(u1.건당지원)}억 ↔ 고용 +${fmt(u1.건당고용)}명 · 연 지방세 ${u1.건당지방세}억(회수 ${fmt(u1.회수년)}년) · 대웅바이오 규모 한 건: ${fmt(u2.건당지원)}억 ↔ +${fmt(u2.건당고용)}명 · ${u2.건당지방세}억(${fmt(u2.회수년)}년). <b>세수로는 돌아오지 않고 고용으로 돌아온다</b> — 다만 자릿수는 세수로 지켜야 한다(상한)`],
+    [`「요건 충족」은 <b>누적</b> 설비투자 200억↑·종업원 100명↑이다 — 한 해 200억↑ 투자는 ${X.n_single200}사, 최근 3년 합 200억↑ ${X.n_3y200}사, 누적으로만 넘는 곳 ${X.n_cum_only}사(공시 햇수 중위 ${X.yrs_med}년) · 비제조 ${X.n_nonmfg}사 포함`,
+     `연봉 = 국민연금 인당 월 고지액 ÷ ${NPS_RATE * 100}%(${W.M1} · 사업장+근로자) × 12 · 기준소득월액 상한 ${fmt(W.cap_month / 1e4)}만원 → 연봉 ${fmt(W.cap_salary)}만 위는 안 보인다(≥ 표시) · 고지에 소급·정산 섞임`,
+     `세수 = KoDATA 법인세비용·DART 감사보고서 추정(2023~25 · 법인지방소득세 = 1/11 · 본점 갈래 안분) + 국민연금 가입자 × 급여 × 0.5% · <b>납부액이 아니다</b> · 고용은 정확값 합(배포판 표는 구간값)`]) +
+  kpi([[won(W.mean_mfg) + "원", "제조 사업장 연봉 · 가입자 가중평균"], [won(W.med_site_mfg_10) + "원", "제조 사업장 연봉 · 사업장 중위(10명↑)"], [won(sal1) + "원", "1군(국가첨단전략) 가입자 가중평균"], [fmt(W.big_emp) + "명", `300명↑ 사업장 ${W.big_n}곳 가입자 · ${W.M1}`], [`${W.big_cap_n}곳 · ${fmt(W.big_cap_emp)}명`, `300명↑ 중 상한에 걸린 곳(연봉 ≥ ${fmt(W.cap_salary)}만)`]]) +
+  `<h2>세수 — 같은 ${X.n}사를 어떤 자로 재느냐</h2><div class="grid"><div class="card"><h3>회수 연수가 자에 따라 갈린다 (누적 소급 가상 지원 ${fmt(X.tier_cum)}억 ÷ 연간)</h3>${table(T.recover, [{ k: "자" }, { k: "연간", nm: "연간(억)" }, { k: "회수년", nm: "회수(년)", d: 1 }], { search: false })}
+    <div class="k">${fmt(X.tier_cum)}억은 요건 충족 ${X.n}사의 <b>누적</b> 설비투자 ${fmt(X.capex_cum)}억(기업마다 1~17년치)에 군별 배율 10·7·5%·상한을 소급한 가상값이다. 최근 3년 capex ${fmt(X.cap3)}억(${X.n_cap3}사) 기준이면 ${fmt(X.tier3)}억 · <b>연 ${fmt(X.tier3_yr)}억</b>. 총량끼리의 회수는 참고일 뿐 — 효과는 아래 「한 건」으로 본다.</div></div>
+  <div class="card"><h3>군별 — 요건 충족 기업</h3>${table(T.by_tier, [{ k: "군" }, { k: "기업" }, { k: "종업원" }, { k: "설비투자3", nm: "설비투자 3년(억)" }, { k: "법인세3", nm: "법인세+지방소득세 3년(억)" }, { k: "연화성", nm: "화성 몫 연(억)" }, { k: "차등3년", nm: "차등 지원 3년 capex 기준(억)" }], { search: false })}</div></div>
+  <h2>지원 1건이 만드는 것 — 두 단위 × 가동률 (기금 ${fmt(T.fund)}억)</h2><div class="grid"><div class="card">${table(T.scn, [{ k: "단위" }, { k: "시나리오" }, { k: "가동률", f: v => pct(v, 1) + "%" }, { k: "협약", nm: "협약(건)" }, { k: "가동", nm: "가동(건)" }, { k: "신규고용", nm: "신규 고용(명)" }, { k: "연지방세", nm: "연 법인지방소득세(억)" }, { k: "회수년", nm: "세수로 기금 회수(년)" }], { search: false })}
+    <div class="k">건당 지원·고용·세수는 같은 기업에서 뽑았다(요건 충족 관내 기업의 중위 / 대웅바이오 산정례: 투자 ${fmt(T.dw.invest)}억 · 지원 ${fmt(T.dw.new)}억). 가동률 ${pct(T.jb.recent, 1)}%·${pct(T.jb.longrun, 1)}%는 전북 민선8기·장기 실적. 작은 건을 많이 하는 쪽이 고용은 크고, 세수 회수는 어떤 기업을 성사시키느냐가 정한다 — <a href="#action">⑦ 실행 과제</a>와 시장 보고(mayor-incentive)가 같은 수치다.</div></div>
+  <div class="card"><h3>산업군별 — 요건 충족 기업의 세수(추정)</h3>${table(T.by_mid.map(r => ({ ...r, 연봉: salary((tier.find(t => t.mid === r.mid) || {}).n_인당고지_만) })), [{ k: "산업" }, { k: "군" }, { k: "기업" }, { k: "종업원" }, { k: "연봉", nm: "연봉(만)" }, { k: "설비투자3", nm: "설비 3년(억)" }, { k: "법인세3", nm: "법인세 3년(억)" }, { k: "연화성", nm: "화성 몫 연(억)", d: 1 }, { k: "인당_만", nm: "인당 화성 세수(만)" }], { search: false, height: "360px" })}</div></div>
+  <h2>연봉 — 산업군별 · 300명 이상 사업장 ${big.length}곳(국민연금 공개자료 · 법인·기관)</h2>
+  <div class="grid"><div class="card"><h3>산업군별 연봉(만원 · 가입자 가중평균)</h3>${hbar("p7a", tier.map(r => r.산업), tier.map(r => salary(r.n_인당고지_만)), tier.map(r => r.차등.startsWith("1군") ? "#1E40AF" : r.차등.startsWith("2군") ? "#B45309" : "#9CA3AF"))}<div class="k">파랑 1군 · 금 2군 · 회 3군 · 제조 전체 가중평균 ${won(W.mean_mfg)}원 · 사업장 중위 ${won(W.med_site_mfg_10)}원</div></div>
+  <div class="card">${bar("p7b", bt.map(r => r.군), bt.map(r => r.가입자), bt.map(r => r.군 === "1군" ? "#1E40AF" : r.군 === "2군" ? "#B45309" : "#9CA3AF"))}<div class="k">군별 가입자(명) · 사업장 ${bt.map(r => `${r.군} ${r.사업장}`).join(" · ")}</div></div></div>
+  <div class="card">${table(big.map(r => ({ ...r, 연봉: (capped(r.인당고지_만) ? "≥ " : "") + fmt(salary(r.인당고지_만)), 임금총액: Math.round(r.가입자수 * salary(r.인당고지_만) / 1e4) })), [{ k: "사업장명" }, { k: "산업군" }, { k: "구" }, { k: "가입자수" }, { k: "연봉", nm: "추정 연봉(만)" }, { k: "임금총액", nm: "연 임금(억 · 하한)" }, { k: "본사" }], { height: "360px" })}<div class="k">≥ = 국민연금 상한에 걸려 실제 연봉은 이보다 높다(${W.big_cap_names.join(" · ")}) · 임금총액도 하한</div></div>`; } },
 
 { id: "action", n: "⑦", t: "실행 과제", q: "과제 12 · 담당 · 시한 · 완료 기준", render() {
   const os = E.action.outflow_sum.find(r => r.갈래 === "수도권 내"), po = E.action.plant_out.length, inD = E.action.inflow_dart.length, cap = E.action.capacity.length, s0 = simulate(), tot = E.elig_tot[0];
