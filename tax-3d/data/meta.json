@@ -1,0 +1,23 @@
+{
+ "built": "2026-09-19 12:45",
+ "n_all": 128604,
+ "n_target": 6780,
+ "n_located": 6780,
+ "n_missing": 0,
+ "n_tax": 6013,
+ "n_res": 585,
+ "tax3_sum": 28645,
+ "res_sum": 240,
+ "sources": {
+  "kodata": "(KoDATA)25년 화성시 소재 기업 명단_251124.xlsx — 1.전체 · 5.급여 · 6.종업원",
+  "tax": "kodata/code/33_corp_tax_estimate.R — KoDATA 법인세비용 + DART 감사보고서 → 법인세+법인지방소득세(1/11) · 본점 갈래 안분(C 는 국민연금)",
+  "res": "kodata/code/35_resident_tax_emp.R — 국민연금 화성 사업장 가입자 × 1인 급여 × 0.5% (면세점 1.8억)",
+  "capex": "DART 감사보고서 capex 정본(08b)",
+  "geocode": "브이월드 getCoord — kodata/data_processed/geocode_3d.rds",
+  "samsung": "kodata/report/samsung-hwaseong.qmd · data_processed/samsung/campus_parcels.geojson(브이월드 연속지적도)",
+  "buildings": "hwaseong-3d/app/data/bldg_*.geojson (링크 data/vw)"
+ },
+ "pub": "배포판 — DART 매핑 법인만 · 구간 대표값 · 주소 읍면동까지",
+ "n_pub_firms": 2362,
+ "n_pub_branches": 658
+}

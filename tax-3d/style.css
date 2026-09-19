@@ -1,0 +1,29 @@
+:root{--ink:#262624;--sub:#6B7280;--line:#C9C7BE;--soft:#F4F3EE;--red:#a63d2f;--blue:#1D4ED8;--gold:#C9A227;--green:#2F7A4F;--paper:#fffff8}
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic','Helvetica Neue',sans-serif;color:var(--ink);background:#e9e9e4}
+#map{position:absolute;inset:0}
+.panel{position:absolute;z-index:5;background:rgba(255,255,248,.96);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:12.5px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+#head{top:10px;left:10px;width:350px;max-height:calc(100% - 20px);overflow:auto}
+#head h1{font-size:16px;margin:0 0 2px}#head .sub{color:var(--sub);font-size:11.5px;margin-bottom:8px}
+.sec{border-top:1px solid var(--line);padding-top:7px;margin-top:7px}.sec b{display:block;margin-bottom:5px;font-size:12px}
+button{margin:2px 3px 2px 0;padding:3px 8px;border:1px solid #9B9A92;border-radius:4px;background:#fff;cursor:pointer;font-size:11.5px;font-family:inherit}
+button.on{background:var(--red);color:#fff;border-color:var(--red)}
+#legend{margin:6px 0 2px;font-size:11.5px}#legend .bar{height:8px;width:100%;background:linear-gradient(90deg,#E4E2DA,#a63d2f);margin:3px 0;border-radius:2px}
+#side{top:10px;right:10px;width:340px;max-height:calc(100% - 20px);overflow:auto}
+#side table{width:100%;border-collapse:collapse;font-size:11.5px}#side td{padding:2px 4px;border-bottom:1px solid #eee;vertical-align:top}#side td:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+#kpi{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;margin:4px 0}#kpi div{background:var(--soft);border-radius:4px;padding:4px 6px}#kpi b{display:block;font-size:14px}#kpi span{color:var(--sub);font-size:10.5px}
+#flist{max-height:230px;overflow:auto;border:1px solid var(--line);border-radius:4px;margin-top:4px}
+#flist div{padding:3px 6px;cursor:pointer;border-bottom:1px solid #eee;font-size:11.5px;display:flex;justify-content:space-between;gap:6px}#flist div:hover{background:var(--soft)}#flist div.sel{background:#f6e9e6}
+#flist div span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--red)}
+#tip{position:absolute;z-index:6;pointer-events:none;background:#262624;color:#fff;font-size:12px;padding:7px 9px;border-radius:6px;display:none;line-height:1.5;max-width:340px}
+#status{position:absolute;z-index:5;bottom:28px;right:10px;background:rgba(38,38,36,.85);color:#fff;font-size:11.5px;padding:5px 9px;border-radius:6px;max-width:440px}
+.k{color:var(--sub)}.num{font-variant-numeric:tabular-nums}.warn{color:var(--red);font-size:11px;margin-top:4px}
+input[type=range]{width:110px;vertical-align:middle}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin-right:3px}
+
+/* 패널 숨기기 토글 — 지도 가장자리에 붙는 작은 탭. 패널이 숨으면 화살표 방향이 바뀐다 */
+.tg{position:absolute;z-index:6;top:10px;width:22px;height:34px;padding:0;margin:0;border-radius:0 6px 6px 0;background:rgba(255,255,248,.96);border:1px solid var(--line);font-size:11px;color:var(--sub)}
+#tg-head{left:370px}#tg-side{right:360px;border-radius:6px 0 0 6px}
+body.hide-head #head{display:none}body.hide-head #tg-head{left:0}
+body.hide-side #side{display:none}body.hide-side #tg-side{right:0}
+details.more{margin-top:5px}details.more>summary{cursor:pointer;color:var(--sub);font-size:11.5px;list-style:none}details.more>summary::before{content:"▸ ";}details.more[open]>summary::before{content:"▾ ";}
+details.more>*:not(summary){margin-top:4px}

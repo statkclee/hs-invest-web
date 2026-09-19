@@ -224,6 +224,10 @@ const Q = [
   return chain(9) + answer([`<b>① 관내 유입</b> — 관외 본사 → 화성 사업장(선 · 기둥 = 설비투자)`, `<b>② 관내 재투자</b> — 요건 충족 45사 · 투자 여력 78사 · 관내 공시`, `<b>③ 관외 유출</b> — 지구본 · 화성 사업장 → 투자예정지 · 전체/세계/국내/수도권`, `<b>④ 재환입</b> — 수도권 내 → 화성 · 본사 관내·공장 관외 25사`], ["배경 OpenFreeMap · 종업원 = 구간 대표값 · 기업 = DART 매핑 법인 · 투자예정지 = 공시 · 시 경계·행정동 29"]) +
   `<div class="k" style="margin:4px 0 8px">새 창: <a href="invest-3d/index.html" target="_blank">invest-3d/index.html</a></div><iframe class="map" src="invest-3d/index.html" loading="lazy"></iframe>`; } },
 
+{ id: "tax3d", n: "⑧b", t: "세수 3D", q: "기업이 화성시에 내는 세금을 자리에 세운다 — 이익 세금 · 사람 세금 · 삼성 · 본사 밖 사업장", render() {
+  return chain(9) + answer([`<b>연 화성 세수 = 이익에 붙는 세금 + 사람에 붙는 세금</b> — 법인지방소득세(추정) + 주민세 종업원분(추정). 이익 세금은 불황이면 0, 사람 세금은 해마다 그대로`, `<b>삼성전자 한 곳(약 2,300억)이 DART 매핑 법인 전부의 합보다 크다</b> — 필지 위 파란 기둥`, `<b>본사 밖 사업장</b>(팔각 기둥) — 기아 오토랜드 화성처럼 KoDATA 명단에 없는 곳을 국민연금 사업장 + DART 로 세웠다`], ["배포판 · 기업 = DART 매핑 법인 · 종업원·매출·세수 = 구간 대표값 · 세수는 납부액이 아니라 추정 · 재산세·취득세 없음 · 건물 브이월드"]) +
+  `<div class="k" style="margin:4px 0 8px">새 창: <a href="tax-3d/index.html" target="_blank">tax-3d/index.html</a></div><iframe class="map" src="tax-3d/index.html" loading="lazy"></iframe>`; } },
+
 { id: "trust", n: "⑨", t: "기업 데이터", q: "무엇을 모았고 · 무엇이 빠졌나", render() {
   const f = D.firms, known = f.filter(r => r.emp_last != null).length, trend = f.filter(r => r.추세가능).length, um = E.action.unmatched_sum[0], nps = C.SOURCES.find(r => r.자료.startsWith("국민연금")), cov = Object.fromEntries(C.COVERAGE.map(r => [r.단계, r.기업]));
   const rate = (a, b) => `${(100 * a / b).toFixed(1)}%`;
