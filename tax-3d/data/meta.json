@@ -17,7 +17,30 @@
   "samsung": "kodata/report/samsung-hwaseong.qmd · data_processed/samsung/campus_parcels.geojson(브이월드 연속지적도)",
   "buildings": "hwaseong-3d/app/data/bldg_*.geojson (링크 data/vw)"
  },
- "pub": "배포판 — DART 매핑 법인만 · 종업원 정확값(한시) · 매출·세수 구간 대표값 · 주소 읍면동까지",
- "n_pub_firms": 2362,
- "n_pub_branches": 658
+ "exact_pub": {
+  "n": 2362,
+  "yr_hs": 1183,
+  "hs_yr": 972,
+  "res": 211,
+  "emp": 121202,
+  "sales": 857824,
+  "cap3": 60764
+ },
+ "exact_all": {
+  "n": 6780,
+  "yr_hs": 1433,
+  "hs_yr": 1196,
+  "res": 240,
+  "emp": 171583,
+  "sales": 1105698,
+  "cap3": 61369
+ },
+ "exact_br": {
+  "n": 658,
+  "yr_hs": 521,
+  "res": 83,
+  "lis": 439,
+  "emp": 38294
+ },
+ "n_dart_missing": 29
 }

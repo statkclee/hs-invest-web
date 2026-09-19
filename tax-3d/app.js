@@ -4,6 +4,8 @@ import { addTopography } from "./topography.mjs";
 
 const STYLE = "https://tiles.openfreemap.org/styles/liberty";
 const $ = id => document.getElementById(id), status = t => { $("status").textContent = t; };
+window.addEventListener("error", e => status("JS 오류: " + e.message + " (" + (e.filename || "").split("/").pop() + ":" + e.lineno + ")"));   // 조용히 멎지 않게 — 상태 줄에 띄운다
+window.addEventListener("unhandledrejection", e => status("JS 오류(비동기): " + (e.reason?.message || e.reason)));
 const fmt = (v, d) => v == null ? "–" : Math.abs(v) >= 1000 ? Math.round(v).toLocaleString() : Number.isInteger(v) ? String(v) : v.toFixed(d ?? (v < 10 ? 1 : 0));
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const offset = (o, e, n) => [o[0] + e / (111320 * Math.cos(o[1] * Math.PI / 180)), o[1] + n / 110574];
@@ -48,7 +50,7 @@ let fh = "yr_hs", fc = "grp", gFilter = "all", grpFilter = "all", taxMin = 0, em
 const octAt = (c, r = 45) => { const ring = []; for (let i = 0; i <= 8; i++) ring.push(offset(c, r * Math.cos(i * Math.PI / 4), r * Math.sin(i * Math.PI / 4))); return ring; };
 BR.features.forEach((f, i) => { f.properties.c = f.geometry.coordinates; f.properties.id = "br" + i; f.properties.isBr = true; });
 if (SAM.features.length) BR.features.unshift({ type: "Feature", geometry: { type: "Point", coordinates: SAMC }, properties: { id: "samsung", isBr: true, isSam: true, n: SAMP.n, ind: "반도체 제조업", kind: "관외 본사(본점 일괄 등록 — 국민연금에 없음)", hq: "경기 수원시", emp: SAMP.emp, emp_all: null, share: null,
-  res: SAMP.res, lis: SAMP.lis_2026, yr_hs: (SAMP.lis_2026 || 0) + (SAMP.res || 0) + (SAMP.prop || 0), sales: null, ctax: null, dong: "반월동", addr: "반월동 948 · 석우동 25", loc: "parcel", c: SAMC } });   // 삼성 캠퍼스 — 이 층의 첫 줄(보고서 값)
+  res: SAMP.res, lis: SAMP.lis_2026, yr_hs: (SAMP.lis_2026 || 0) + (SAMP.res || 0), prop: SAMP.prop, sales: null, ctax: null, dong: "반월동", addr: "반월동 948 · 석우동 25", loc: "parcel", c: SAMC } });   // 삼성 캠퍼스 — 이 층의 첫 줄(보고서 값)
 const BRCOL = { "관외 본사": "#a63d2f", "관외 본사 추정(지점)": "#c96b56", "관내 본사(KoDATA 누락)": "#C9A227", "비영리": "#9B9A92", "미확인": "#d9a99d" };
 const brVal = p => ({ yr_hs: p.yr_hs, res: p.res, sales: p.sales, emp: p.emp, tax3: null, cap3: null, chg: null })[fh];
 const brVisible = () => brOn ? BR.features.filter(f => { const p = f.properties; return (p.yr_hs ?? 0) >= taxMin && (p.emp ?? 0) >= empMin && (grpFilter === "all") && (gFilter === "all") && (!query || (p.n + " " + (p.ind || "") + " " + (p.dong || "") + " " + (p.hq || "")).toLowerCase().includes(query)); }) : [];
@@ -67,7 +69,8 @@ function firmColor() {
   return ["case", ["get", "neg"], "#c9c7be", base];
 }
 // 삼성 캠퍼스 기둥 — 2026 실측 법인지방소득세 + 종업원분 + 재산세(같은 연 세수 자)
-function samGeo() { const v = (SAMP.lis_2026 || 0) + (SAMP.res || 0) + (SAMP.prop || 0); return { type: "FeatureCollection", features: samOn && SAM.features.length ? [{ type: "Feature", properties: { n: SAMP.n, h: MIN_H + Math.sqrt(fh === "res" ? SAMP.res : fh === "emp" ? SAMP.emp : fh === "yr_hs" ? v : 0) * (FH[fh === "emp" ? "emp" : fh === "res" ? "res" : "yr_hs"].s), v }, geometry: { type: "Polygon", coordinates: [hexAt(SAMC, 120)] }}] : [] }; }
+// 삼성 기둥 — 같은 자(법인지방소득세 + 종업원분). 재산세는 기업 기둥에 없으므로 여기서도 뺀다(카드에만)
+function samGeo() { const v = (SAMP.lis_2026 || 0) + (SAMP.res || 0); return { type: "FeatureCollection", features: samOn && SAM.features.length ? [{ type: "Feature", properties: { n: SAMP.n, h: MIN_H + Math.sqrt(fh === "res" ? SAMP.res : fh === "emp" ? SAMP.emp : fh === "yr_hs" ? v : 0) * (FH[fh === "emp" ? "emp" : fh === "res" ? "res" : "yr_hs"].s), v }, geometry: { type: "Polygon", coordinates: [hexAt(SAMC, 120)] }}] : [] }; }
 
 const map = new maplibregl.Map({ container: "map", style: STYLE, ...VIEWS.city, maxPitch: 75, maxZoom: 19, maxBounds: [[126.2, 36.8], [127.5, 37.5]], attributionControl: { compact: true } });
 map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "bottom-right");
@@ -91,7 +94,7 @@ map.on("load", () => {
   map.addSource("sel", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
   map.addLayer({ id: "sel", type: "line", source: "sel", paint: { "line-color": "#f2a35b", "line-width": 4 } });
   setMetric(cur); ensureBuildings(); refreshFirms();
-  status(`준비됨 — 기업 기둥 ${FIRMS.features.length.toLocaleString()}사(좌표 미확인 ${META.n_missing ?? "?"}) · 건물은 확대하면 읽는다`);
+  status(`준비됨 — 기업 기둥 ${FIRMS.features.length.toLocaleString()}사(좌표 미확인 ${META.n_dart_missing ?? META.n_missing ?? "?"}) · 건물은 확대하면 읽는다`);
 });
 map.on("moveend", ensureBuildings);
 
@@ -168,14 +171,15 @@ function renderKpi() {
   $("kpi").innerHTML = [[fmt(P.length), "기업(사)"], [fmt(yr) + "억", "연 화성 세수 합"], [fmt(hs) + "억", "└ 법인지방소득세 화성분 연평균"], [fmt(rs) + "억", "└ 주민세 종업원분"],
     [fmt(sum("tax3")) + "억", `법인세+지방소득세 3년(${fmt(cnt("tax3"))}사)`], [fmt(sum("sales")) + "억", `매출 합(${fmt(cnt("sales"))}사)`], [fmt(sum("emp")) + "명", `종업원 합(${fmt(cnt("emp"))}사)`], [fmt(sum("cap3")) + "억", `설비투자 3년(${fmt(cnt("cap3"))}사)`]]
     .map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join("");
-  const B = brVisible().map(f => f.properties);
-  $("kpi-note").innerHTML = `필터·검색에 걸린 기업의 합. <b>본사 밖 사업장 ${fmt(B.length)}곳</b>은 따로 — 가입자 ${fmt(B.reduce((s, p) => s + (p.emp || 0), 0))}명 · 연 화성 세수 ${fmt(B.reduce((s, p) => s + (p.yr_hs || 0), 0))}억(종업원분 ${fmt(B.reduce((s, p) => s + (p.res || 0), 0))} + 법인지방소득세 ${fmt(B.reduce((s, p) => s + (p.lis || 0), 0))})`;
+  const B = brVisible().map(f => f.properties).filter(p => !p.isSam), S = brVisible().some(f => f.properties.isSam);
+  const X = META.exact_pub, XB = META.exact_br, pubNote = X ? ` <span class="warn">배포판은 구간 대표값의 합이라 과대 — 정확 합계: 기업 ${fmt(X.n)}사 연 ${fmt(X.yr_hs)}억(화성분 ${fmt(X.hs_yr)} + 종업원분 ${fmt(X.res)}) · 전체 ${fmt(META.exact_all.n)}사 ${fmt(META.exact_all.yr_hs)}억 · 본사 밖 ${fmt(XB.n)}곳 ${fmt(XB.yr_hs)}억</span>` : "";
+  $("kpi-note").innerHTML = `필터·검색에 걸린 기업의 합. <b>본사 밖 사업장 ${fmt(B.length)}곳</b>은 따로 — 가입자 ${fmt(B.reduce((s, p) => s + (p.emp || 0), 0))}명 · 연 화성 세수 ${fmt(B.reduce((s, p) => s + (p.yr_hs || 0), 0))}억(종업원분 ${fmt(B.reduce((s, p) => s + (p.res || 0), 0))} + 법인지방소득세 ${fmt(B.reduce((s, p) => s + (p.lis || 0), 0))} — 법인지방소득세는 DART 손익이 있는 곳만)${S ? ` · 삼성 캠퍼스 ${fmt((SAMP.lis_2026 || 0) + (SAMP.res || 0))}억은 별도(실측+추정)` : ""}.${pubNote}`;
 }
 function selectSamsung(fly) {
   selId = null; document.querySelectorAll("#flist div").forEach(d => d.classList.remove("sel"));
   map.getSource("sel").setData({ type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [hexAt(SAMC, 135)] } }] });
   $("d-title").textContent = SAMP.n; $("d-sub").textContent = "반도체 · 본점 수원 · 반월동 948 + 석우동 25";
-  $("d-table").innerHTML = [["<b>연 화성 세수(2026 기준)</b>", `<b>${fmt((SAMP.lis_2026 || 0) + (SAMP.res || 0) + (SAMP.prop || 0))}억</b>`], ["└ 법인지방소득세 2026 납부(실측)", fmt(SAMP.lis_2026) + "억"], ["└ 주민세 종업원분(추정)", fmt(SAMP.res) + "억"], ["└ 재산세 토지+건물(추정)", fmt(SAMP.prop) + "억"],
+  $("d-table").innerHTML = [["<b>연 화성 세수(2026 기준 · 기업 기둥과 같은 자)</b>", `<b>${fmt((SAMP.lis_2026 || 0) + (SAMP.res || 0))}억</b>`], ["└ 법인지방소득세 2026 납부(실측)", fmt(SAMP.lis_2026) + "억"], ["└ 주민세 종업원분(추정)", fmt(SAMP.res) + "억"], ["재산세 토지+건물(추정 · 기둥에는 안 넣음)", fmt(SAMP.prop) + "억"],
     ["법인지방소득세 2024(무이익년)", fmt(SAMP.lis_2024) + "억"], ["법인지방소득세 최고(2022)", fmt(SAMP.lis_max) + "억"], ["임직원", fmt(SAMP.emp) + "명"], ["부지", fmt(SAMP.area) + "㎡ · 공시지가 " + SAMP.land_jiga_jo + "조"], ["건물 연면적(기재분)", fmt(SAMP.gfa) + "㎡"]]
     .map(([k, v]) => `<tr><td class="k">${k}</td><td>${v}</td></tr>`).join("");
   $("d-warn").textContent = "KoDATA 명단에 없는 기업이라 다른 기둥과 자료가 다르다. 법인지방소득세는 실측, 나머지는 보고서 추정.";
@@ -188,7 +192,7 @@ function selectBranch(p, fly) {
   $("d-table").innerHTML = [["<b>연 화성 세수(추정)</b>", `<b>${fmt(p.yr_hs)}억</b>`], ["└ 법인지방소득세 화성분", p.lis == null ? "– (DART 손익 없음)" : fmt(p.lis, 1) + "억"], ["└ 주민세 종업원분", p.res ? fmt(p.res, 1) + "억" + (p.cap ? " (기준소득 상한 → 하한값)" : "") : "면세점 이하"],
     ["별도 법인세비용" + (p.fy ? " FY" + p.fy : ""), p.ctax == null ? "–" : fmt(p.ctax) + "억 (전사)"], ["별도 매출 · 세전이익", p.sales == null ? "–" : `${fmt(p.sales)}억 · ${fmt(p.pretax)}억`],
     ["화성 가입자 ÷ 전사 가입자", p.emp_all ? `${fmt(p.emp)} ÷ ${fmt(p.emp_all)} = ${(100 * p.share).toFixed(0)}%` : fmt(p.emp) + "명 (전사 미확인)"], ["1인 연급여(국민연금 기준소득)", p.pay == null ? "–" : fmt(p.pay) + "만원"],
-    ["본점 주소", p.hq_addr || "–"], ["위치 정확도", p.loc === "bldg" ? "건물(이름 일치)" : p.loc === "road" ? "도로 위 한 점(번지 없음)" : "법정동 중심"]]
+    ["본점 주소", p.hq_addr || "–"], ["위치 정확도", p.loc === "bldg" ? "건물(이름 일치)" : p.loc === "road" ? "도로 위 한 점(번지 없음 — 대략)" : p.loc === "parcel" ? "필지" : "법정동 중심(대략)"]]
     .map(([k, v]) => `<tr><td class="k">${k}</td><td>${v}</td></tr>`).join("");
   $("d-warn").textContent = "KoDATA 명단 밖 사업장 — 국민연금 가입자와 DART 별도 손익으로 추정. 법인지방소득세는 종업원 비율로만 안분(연면적 안분 없음).";
   if (fly) map.flyTo({ center: p.c, zoom: 15.4, pitch: 60, bearing: -25, duration: reduceMotion ? 0 : 900 });
