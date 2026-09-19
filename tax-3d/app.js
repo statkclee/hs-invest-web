@@ -47,10 +47,12 @@ let fh = "yr_hs", fc = "grp", gFilter = "all", grpFilter = "all", taxMin = 0, em
 // ── 본사 밖 사업장(kodata/code/36 → code/03): 국민연금 화성 사업장 중 KoDATA 밖 법인. 팔각 기둥(반지름 45m)·적갈색. 같은 자(연 화성 세수)로 세운다 ──
 const octAt = (c, r = 45) => { const ring = []; for (let i = 0; i <= 8; i++) ring.push(offset(c, r * Math.cos(i * Math.PI / 4), r * Math.sin(i * Math.PI / 4))); return ring; };
 BR.features.forEach((f, i) => { f.properties.c = f.geometry.coordinates; f.properties.id = "br" + i; f.properties.isBr = true; });
+if (SAM.features.length) BR.features.unshift({ type: "Feature", geometry: { type: "Point", coordinates: SAMC }, properties: { id: "samsung", isBr: true, isSam: true, n: SAMP.n, ind: "반도체 제조업", kind: "관외 본사(본점 일괄 등록 — 국민연금에 없음)", hq: "경기 수원시", emp: SAMP.emp, emp_all: null, share: null,
+  res: SAMP.res, lis: SAMP.lis_2026, yr_hs: (SAMP.lis_2026 || 0) + (SAMP.res || 0) + (SAMP.prop || 0), sales: null, ctax: null, dong: "반월동", addr: "반월동 948 · 석우동 25", loc: "parcel", c: SAMC } });   // 삼성 캠퍼스 — 이 층의 첫 줄(보고서 값)
 const BRCOL = { "관외 본사": "#a63d2f", "관외 본사 추정(지점)": "#c96b56", "관내 본사(KoDATA 누락)": "#C9A227", "비영리": "#9B9A92", "미확인": "#d9a99d" };
 const brVal = p => ({ yr_hs: p.yr_hs, res: p.res, sales: p.sales, emp: p.emp, tax3: null, cap3: null, chg: null })[fh];
 const brVisible = () => brOn ? BR.features.filter(f => { const p = f.properties; return (p.yr_hs ?? 0) >= taxMin && (p.emp ?? 0) >= empMin && (grpFilter === "all") && (gFilter === "all") && (!query || (p.n + " " + (p.ind || "") + " " + (p.dong || "") + " " + (p.hq || "")).toLowerCase().includes(query)); }) : [];
-function brGeo() { return { type: "FeatureCollection", features: brVisible().map(f => { const p = f.properties, v = brVal(p); return { type: "Feature", properties: { ...p, h: v == null || v <= 0 ? MIN_H : MIN_H + Math.sqrt(v) * FH[fh].s }, geometry: { type: "Polygon", coordinates: [octAt(p.c)] } }; }) }; }
+function brGeo() { return { type: "FeatureCollection", features: brVisible().filter(f => !f.properties.isSam).map(f => { const p = f.properties, v = brVal(p); return { type: "Feature", properties: { ...p, h: v == null || v <= 0 ? MIN_H : MIN_H + Math.sqrt(v) * FH[fh].s }, geometry: { type: "Polygon", coordinates: [octAt(p.c)] } }; }) }; }
 const visible = () => FIRMS.features.filter(f => { const p = f.properties; return (gFilter === "all" || p.g === gFilter) && (grpFilter === "all" || p.grp === grpFilter) && (p.yr_hs ?? 0) >= taxMin && (p.emp ?? 0) >= empMin && (!query || (p.n + " " + (p.ind || "") + " " + (p.dong || "")).toLowerCase().includes(query)); });
 function firmGeo() {
   const H = FH[fh];
@@ -157,7 +159,7 @@ function renderFirmList() {
   const rows = [...visible().map(f => f.properties), ...brVisible().map(f => f.properties)].sort((a, b) => (val(b) ?? -1) - (val(a) ?? -1));
   rows.slice(0, 200).forEach(p => { const d = document.createElement("div");
     d.innerHTML = `<span>${p.isBr ? "<span style='color:#a63d2f'>▣</span> " : ""}${p.n} <span class="k">· ${(p.ind || "").slice(0, 14)} · ${p.dong || ""}${p.isBr && p.hq ? " · 본사 " + p.hq : ""}</span></span><span>${fmt(val(p))}${fh === "chg" && p.chg < 0 ? "↓" : ""}</span>`;
-    d.onclick = () => p.isBr ? selectBranch(p, true) : selectFirm(p, true); d.dataset.id = p.id; d.classList.toggle("sel", p.id === selId); list.appendChild(d); });
+    d.onclick = () => p.isSam ? selectSamsung(true) : p.isBr ? selectBranch(p, true) : selectFirm(p, true); d.dataset.id = p.id; d.classList.toggle("sel", p.id === selId); list.appendChild(d); });
   $("flist-note").textContent = `${rows.length.toLocaleString()}곳 (${H.nm} 순 · 200까지 · ▣ = 본사 밖 사업장)`;
 }
 function renderKpi() {
